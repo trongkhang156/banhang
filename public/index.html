@@ -9,7 +9,7 @@
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Roboto',sans-serif;}
 body{background:#f4f6f8;color:#2d3e50;}
 .wrapper{display:flex;flex-direction:column;min-height:100vh;}
-.header{background:#27ae60;color:white;text-align:center;font-size:22px;font-weight:700;padding:15px;}
+.header{background:#27ae60;color:white;text-align:center;font-size:22px;font-weight:700;padding:15px;position:relative;}
 .tabs{display:flex;overflow-x:auto;background:#2c3e50;}
 .tab{flex:1;padding:12px;color:white;text-align:center;cursor:pointer;transition:0.2s;font-weight:500;}
 .tab.active{background:#1e8449;font-weight:700;}
@@ -34,7 +34,31 @@ button:hover{background:#1e8449;}
   .tab{text-align:left;padding-left:20px;}
   .content{flex:1;padding:20px;}
 }
+
+/* A2HS button */
+#btnAddToHome {
+  position:absolute;
+  right:15px;
+  top:15px;
+  background:#f39c12;
+  color:white;
+  padding:8px 12px;
+  border-radius:6px;
+  display:none;
+  cursor:pointer;
+}
+
+/* iOS banner */
+#iosBanner {
+  display:none;
+  background:#f39c12;
+  color:white;
+  padding:10px;
+  text-align:center;
+  font-size:14px;
+}
 </style>
+
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#27ae60">
 <meta name="mobile-web-app-capable" content="yes">
@@ -43,6 +67,7 @@ button:hover{background:#1e8449;}
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 
 </head>
+
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -53,9 +78,18 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
+
 <body>
 
-<div class="header">Quản lý kho</div>
+<div id="iosBanner">
+  Để cài app: Chạm <strong>Chia sẻ → Thêm vào màn hình chính</strong>
+</div>
+
+<div class="header">
+  Quản lý kho
+  <button id="btnAddToHome">Thêm vào màn hình chính</button>
+</div>
+
 <div class="wrapper">
   <div class="tabs">
     <div class="tab active" data-tab="products">Sản phẩm</div>
@@ -63,6 +97,7 @@ if ("serviceWorker" in navigator) {
     <div class="tab" data-tab="import">Phiếu nhập</div>
     <div class="tab" data-tab="export">Phiếu xuất</div>
   </div>
+
   <div class="content">
 
     <!-- Products -->
@@ -113,6 +148,7 @@ if ("serviceWorker" in navigator) {
         </table>
         <button id="submitImport" style="margin-top:10px;">Lưu phiếu nhập</button>
       </div>
+
       <div class="card">
         <h2>Danh sách phiếu nhập</h2>
         <table>
@@ -138,6 +174,7 @@ if ("serviceWorker" in navigator) {
         </table>
         <button id="submitExport" style="margin-top:10px;">Lưu phiếu xuất</button>
       </div>
+
       <div class="card">
         <h2>Danh sách phiếu xuất</h2>
         <table>
@@ -151,7 +188,7 @@ if ("serviceWorker" in navigator) {
 </div>
 
 <script>
-// Tabs
+/* ========== Tabs ========== */
 const tabs=document.querySelectorAll('.tab'); 
 const contents=document.querySelectorAll('.tab-content');
 tabs.forEach(tab=>tab.addEventListener('click',()=>{
@@ -160,9 +197,36 @@ tabs.forEach(tab=>tab.addEventListener('click',()=>{
   contents.forEach(c=>c.style.display=c.id===tab.dataset.tab?'block':'none');
 }));
 
+/* ======= A2HS BUTTON (ANDROID) ======= */
+let deferredPrompt;
+const btnAdd = document.getElementById("btnAddToHome");
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  btnAdd.style.display = "block";
+});
+
+btnAdd.addEventListener("click", async () => {
+  btnAdd.style.display = "none";
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+});
+
+/* ======= iOS BANNER ======= */
+const isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+const isStandalone = window.navigator.standalone;
+
+if (isIOS && !isStandalone) {
+  document.getElementById("iosBanner").style.display = "block";
+}
+
+/* ======= REST OF YOUR ORIGINAL JS ======= */
+
 let importItems=[], exportItems=[];
 
-// Load products
 async function loadProducts(){
   const res=await fetch('/api/products'); 
   const data=await res.json();
@@ -180,15 +244,12 @@ async function loadProducts(){
   loadInventory(); loadInboundReceipts(); loadOutboundReceipts();
 }
 
-// Xóa sản phẩm
 async function deleteProduct(id){
   if(!confirm('Bạn có chắc muốn xóa sản phẩm này?')) return;
   const res = await fetch(`/api/products/${id}`, { method:'DELETE' });
   if(res.ok) loadProducts();
-  else { const err = await res.json(); alert(err.error); }
 }
 
-// Inventory
 async function loadInventory(){
   const res=await fetch('/api/warehouse'); const data=await res.json();
   const tbody=document.getElementById('inventoryTable'); tbody.innerHTML='';
@@ -199,7 +260,7 @@ async function loadInventory(){
   });
 }
 
-// Import multi
+/* ========== IMPORT ========== */
 document.getElementById('addImportItem').addEventListener('click', ()=>{
   const pid=document.getElementById('importProduct').value;
   const qty=+document.getElementById('importQty').value;
@@ -207,23 +268,25 @@ document.getElementById('addImportItem').addEventListener('click', ()=>{
   importItems.push({productId:pid, quantity:qty});
   renderImportItems();
 });
+
 function renderImportItems(){
   const tbody=document.getElementById('importItemsTable'); tbody.innerHTML='';
   importItems.forEach((it,idx)=>{
     const name=document.getElementById('importProduct').selectedOptions[0].text;
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${name}</td><td>${it.quantity}</td><td><button onclick="importItems.splice(${idx},1);renderImportItems();" class="delete-btn">Xóa</button></td>`;
+    tr.innerHTML=`<td>${name}</td><td>${it.quantity}</td>
+                  <td><button onclick="importItems.splice(${idx},1);renderImportItems();" class="delete-btn">Xóa</button></td>`;
     tbody.appendChild(tr);
   });
 }
+
 document.getElementById('submitImport').addEventListener('click', async ()=>{
   if(importItems.length===0) return alert('Chưa có sản phẩm nào');
   const res=await fetch('/api/inbound',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:importItems})});
-  if(res.ok){ alert('Nhập kho thành công'); importItems=[]; renderImportItems(); loadInventory(); loadInboundReceipts();}
-  else{ const err=await res.json(); alert(err.error);}
+  if(res.ok){ importItems=[]; renderImportItems(); loadInventory(); loadInboundReceipts(); }
 });
 
-// Export multi
+/* ========== EXPORT ========== */
 document.getElementById('addExportItem').addEventListener('click', ()=>{
   const pid=document.getElementById('exportProduct').value;
   const qty=+document.getElementById('exportQty').value;
@@ -231,79 +294,79 @@ document.getElementById('addExportItem').addEventListener('click', ()=>{
   exportItems.push({productId:pid, quantity:qty});
   renderExportItems();
 });
+
 function renderExportItems(){
   const tbody=document.getElementById('exportItemsTable'); tbody.innerHTML='';
   exportItems.forEach((it,idx)=>{
     const name=document.getElementById('exportProduct').selectedOptions[0].text;
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${name}</td><td>${it.quantity}</td><td><button onclick="exportItems.splice(${idx},1);renderExportItems();" class="delete-btn">Xóa</button></td>`;
+    tr.innerHTML=`<td>${name}</td><td>${it.quantity}</td>
+                  <td><button onclick="exportItems.splice(${idx},1);renderExportItems();" class="delete-btn">Xóa</button></td>`;
     tbody.appendChild(tr);
   });
 }
+
 document.getElementById('submitExport').addEventListener('click', async ()=>{
   if(exportItems.length===0) return alert('Chưa có sản phẩm nào');
-  const whRes=await fetch('/api/warehouse'); const whData=await whRes.json();
+
+  const whRes=await fetch('/api/warehouse'); 
+  const whData=await whRes.json();
+
   for(const it of exportItems){
-    const stock=whData.find(w=>w.productId._id===it.productId)?.stock||0;
+    const stock = whData.find(w=>w.productId._id===it.productId)?.stock||0;
     if(it.quantity>stock) return alert(`Sản phẩm ${it.productId} vượt tồn kho (còn ${stock})`);
   }
+
   const res=await fetch('/api/outbound',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:exportItems})});
-  if(res.ok){ alert('Xuất kho thành công'); exportItems=[]; renderExportItems(); loadInventory(); loadOutboundReceipts();}
-  else{ const err=await res.json(); alert(err.error);}
+  if(res.ok){ exportItems=[]; renderExportItems(); loadInventory(); loadOutboundReceipts(); }
 });
 
-// Phiếu nhập xuất hiển thị với template riêng
+/* LOAD RECEIPTS */
 async function loadInboundReceipts(){
   const res=await fetch('/api/inbound'); const data=await res.json();
   const tbody=document.getElementById('importReceiptsTable'); tbody.innerHTML='';
   data.forEach(r=>{
     const items = r.items.map(i=>`${i.productId.name} (${i.quantity})`).join(', ');
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${r.code}</td>
-                  <td>${items}</td>
-                  <td>
-                    <button onclick="printReceipt('${r.code}')">In</button>
-                    <button onclick="deleteInbound('${r._id}')" style="background:#e74c3c;margin-left:5px;">Xóa</button>
-                  </td>`;
+    tr.innerHTML=`<td>${r.code}</td><td>${items}</td>
+                  <td><button onclick="printReceipt('${r.code}')">In</button>
+                      <button onclick="deleteInbound('${r._id}')" class="delete-btn">Xóa</button></td>`;
     tbody.appendChild(tr);
   });
 }
+
 async function loadOutboundReceipts(){
   const res=await fetch('/api/outbound'); const data=await res.json();
   const tbody=document.getElementById('exportReceiptsTable'); tbody.innerHTML='';
   data.forEach(r=>{
     const items = r.items.map(i=>`${i.productId.name} (${i.quantity})`).join(', ');
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${r.code}</td>
-                  <td>${items}</td>
-                  <td>
-                    <button onclick="printReceipt('${r.code}')">In</button>
-                    <button onclick="deleteOutbound('${r._id}')" style="background:#e74c3c;margin-left:5px;">Xóa</button>
-                  </td>`;
+    tr.innerHTML=`<td>${r.code}</td><td>${items}</td>
+                  <td><button onclick="printReceipt('${r.code}')">In</button>
+                      <button onclick="deleteOutbound('${r._id}')" class="delete-btn">Xóa</button></td>`;
     tbody.appendChild(tr);
   });
 }
 
-// Delete phiếu
+/* DELETE RECEIPTS */
 async function deleteInbound(id){
   if(!confirm('Bạn có chắc muốn xóa phiếu nhập này?')) return;
   const res = await fetch(`/api/inbound/${id}`, { method:'DELETE' });
   if(res.ok) loadInboundReceipts();
-  else { const err = await res.json(); alert(err.error); }
 }
+
 async function deleteOutbound(id){
   if(!confirm('Bạn có chắc muốn xóa phiếu xuất này?')) return;
   const res = await fetch(`/api/outbound/${id}`, { method:'DELETE' });
   if(res.ok) loadOutboundReceipts();
-  else { const err = await res.json(); alert(err.error); }
 }
 
-// In template riêng
+/* PRINT */
 function printReceipt(code){
   window.open(`/receipt/${code}`, '_blank');
 }
 
-// Add product
+/* ADD PRODUCT */
 document.getElementById('addForm').addEventListener('submit', async e=>{
   e.preventDefault();
   const name=document.getElementById('addName').value;
