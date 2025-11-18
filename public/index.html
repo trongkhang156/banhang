@@ -3,194 +3,250 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quản lý kho</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<title>Quản lý kho - Hóa đơn</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Roboto',sans-serif;background:#eef1f5;}
-.wrapper{display:flex;min-height:100vh;}
-.sidebar{width:220px;background:#2c3e50;color:#fff;flex-shrink:0;}
-.sidebar h2{text-align:center;padding:20px 0;font-weight:700;font-size:20px;border-bottom:1px solid #34495e;}
-.sidebar ul{list-style:none;}
-.sidebar ul li{padding:15px 20px;cursor:pointer;transition:0.2s;}
-.sidebar ul li:hover,.sidebar ul li.active{background:#34495e;}
-.content{flex:1;padding:20px;}
-h1{text-align:center;font-size:32px;font-weight:700;margin-bottom:30px;color:#2d3e50;}
-.card{background:#fff;padding:25px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.07);margin-bottom:30px;}
-h2{margin-bottom:20px;font-size:22px;font-weight:600;color:#34495e;}
-form{display:grid;grid-template-columns: repeat(3, 1fr);gap:15px 20px;align-items:center;}
-form input, form select{width:100%;padding:12px;border-radius:8px;border:1px solid #cfd4dc;font-size:15px;background:#fafbfd;transition:0.2s;}
-form input:focus, form select:focus{border-color:#3498db;box-shadow:0 0 6px rgba(52,152,219,0.25);outline:none;}
-.form-actions{grid-column: span 3; display:flex; justify-content:center; margin-top:10px;}
-.btn-add{background:#27ae60;color:#fff;padding:15px 40px;font-size:18px;border-radius:10px;border:none;cursor:pointer;font-weight:600;width:260px;}
-.btn-add:hover{background:#1e8449;}
-table{width:100%;border-collapse:collapse;background:white;border-radius:12px;overflow:hidden;table-layout:fixed;}
-th, td{padding:14px 16px;font-size:15px;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-th{background:#3498db;color:white;font-weight:600;text-transform:uppercase;font-size:14px;}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Roboto',sans-serif;}
+body{background:#f4f6f8;color:#2d3e50;}
+.wrapper{display:flex;flex-direction:column;min-height:100vh;}
+.header{background:#27ae60;color:white;text-align:center;font-size:22px;font-weight:700;padding:15px;}
+.tabs{display:flex;overflow-x:auto;background:#2c3e50;}
+.tab{flex:1;padding:12px;color:white;text-align:center;cursor:pointer;transition:0.2s;font-weight:500;}
+.tab.active{background:#1e8449;font-weight:700;}
+.content{flex:1;padding:15px;}
+.card{background:white;padding:15px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.08);margin-bottom:15px;}
+.card h2{margin-bottom:10px;font-size:18px;color:#34495e;}
+form{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;}
+form input, form select{flex:1 1 120px;padding:10px;border-radius:8px;border:1px solid #cfd4dc;font-size:14px;}
+form button{padding:10px 20px;border:none;border-radius:8px;background:#27ae60;color:white;font-weight:600;cursor:pointer;transition:0.2s;}
+form button:hover{background:#1e8449;}
+table{width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;margin-top:10px;}
+th, td{padding:10px;font-size:14px;border-bottom:1px solid #e5e7eb;text-align:left;}
+th{background:#3498db;color:white;font-weight:600;}
 tr:hover{background:#f7fbff;}
-.action-btn{padding:7px 14px;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;transition:0.2s;margin-right:5px;}
-.edit-btn{background:#f1c40f;color:#fff;} .edit-btn:hover{background:#d4ac0d;}
-.delete-btn{background:#e74c3c;color:#fff;} .delete-btn:hover{background:#c0392b;}
-.error-msg{color:red;margin-top:5px;}
-.row-item{display:flex;gap:10px;margin-bottom:10px;}
-.row-item select,input{flex:1;}
-.row-item button{flex-shrink:0;}
+button{cursor:pointer; border:none; border-radius:6px; padding:6px 12px; background:#27ae60; color:white;}
+button:hover{background:#1e8449;}
+.delete-btn{background:#e74c3c;color:white;} .delete-btn:hover{background:#c0392b;}
+.error-msg{color:red;font-size:13px;margin-top:5px;}
+@media (min-width:768px){
+  .wrapper{flex-direction:row;}
+  .tabs{flex-direction:column;width:180px;height:100vh;}
+  .tab{text-align:left;padding-left:20px;}
+  .content{flex:1;padding:20px;}
+}
+/* Khi in, ẩn các nút thao tác */
+@media print{
+  .no-print, #submitImport, #submitExport, #addImportItem, #addExportItem{display:none !important;}
+  body{background:white;color:black;}
+  table th, table td{border:1px solid #000;}
+}
 </style>
 </head>
 <body>
+
+<div class="header">Quản lý kho</div>
 <div class="wrapper">
-  <div class="sidebar">
-    <h2>Quản lý kho</h2>
-    <ul>
-      <li class="active" data-tab="products">Sản phẩm</li>
-      <li data-tab="inventory">Tồn kho</li>
-      <li data-tab="import">Phiếu nhập</li>
-      <li data-tab="export">Phiếu xuất</li>
-    </ul>
+  <div class="tabs">
+    <div class="tab active" data-tab="products">Sản phẩm</div>
+    <div class="tab" data-tab="inventory">Tồn kho</div>
+    <div class="tab" data-tab="import">Phiếu nhập</div>
+    <div class="tab" data-tab="export">Phiếu xuất</div>
   </div>
   <div class="content">
-    <!-- Sản phẩm -->
+
+    <!-- Products -->
     <div id="products" class="tab-content">
-      <h1>Sản phẩm</h1>
       <div class="card">
         <h2>Thêm sản phẩm</h2>
         <form id="addForm">
           <input type="text" id="addName" placeholder="Tên sản phẩm" required>
           <input type="number" id="addPrice" placeholder="Giá" required>
           <input type="text" id="addDesc" placeholder="Mô tả">
-          <div class="form-actions">
-            <button type="submit" class="btn-add">Thêm sản phẩm</button>
-          </div>
+          <button type="submit">Thêm sản phẩm</button>
         </form>
       </div>
       <div class="card">
         <h2>Danh sách sản phẩm</h2>
         <table>
-          <thead><tr><th>Tên</th><th>Giá</th><th>Mô tả</th><th>Hành động</th></tr></thead>
+          <thead>
+            <tr><th>Tên</th><th>Giá</th><th>Mô tả</th></tr>
+          </thead>
           <tbody id="productTable"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- Tồn kho -->
+    <!-- Inventory -->
     <div id="inventory" class="tab-content" style="display:none;">
-      <h1>Tồn kho</h1>
       <div class="card">
+        <h2>Tồn kho</h2>
         <table>
-          <thead><tr><th>Sản phẩm</th><th>Tồn</th></tr></thead>
+          <thead><tr><th>Sản phẩm</th><th>Số lượng</th></tr></thead>
           <tbody id="inventoryTable"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- Phiếu nhập -->
+    <!-- Import -->
     <div id="import" class="tab-content" style="display:none;">
-      <h1>Phiếu nhập</h1>
       <div class="card">
-        <form id="importForm">
-          <div id="importRows"></div>
-          <button type="button" onclick="addImportRow()" class="btn-add">Thêm sản phẩm</button>
-          <div class="form-actions">
-            <button type="submit" class="btn-add">Nhập kho</button>
-          </div>
-        </form>
+        <h2>Phiếu nhập</h2>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+          <select id="importProduct" style="flex:2"></select>
+          <input type="number" id="importQty" placeholder="Số lượng" style="flex:1">
+          <button id="addImportItem" style="flex:1">Thêm</button>
+        </div>
+        <table>
+          <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th class="no-print">Xóa</th></tr></thead>
+          <tbody id="importItemsTable"></tbody>
+        </table>
+        <button id="submitImport" style="margin-top:10px;">Lưu phiếu nhập</button>
       </div>
       <div class="card">
+        <h2>Danh sách phiếu nhập</h2>
         <table>
-          <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Hành động</th></tr></thead>
-          <tbody id="importTable"></tbody>
+          <thead><tr><th>Mã phiếu</th><th>Chi tiết sản phẩm</th><th class="no-print">In</th></tr></thead>
+          <tbody id="importReceiptsTable"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- Phiếu xuất -->
+    <!-- Export -->
     <div id="export" class="tab-content" style="display:none;">
-      <h1>Phiếu xuất</h1>
       <div class="card">
-        <form id="exportForm">
-          <div id="exportRows"></div>
-          <button type="button" onclick="addExportRow()" class="btn-add">Thêm sản phẩm</button>
-          <div class="error-msg" id="exportError"></div>
-          <div class="form-actions">
-            <button type="submit" class="btn-add">Xuất kho</button>
-          </div>
-        </form>
+        <h2>Phiếu xuất</h2>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+          <select id="exportProduct" style="flex:2"></select>
+          <input type="number" id="exportQty" placeholder="Số lượng" style="flex:1">
+          <button id="addExportItem" style="flex:1">Thêm</button>
+        </div>
+        <div class="error-msg" id="exportError"></div>
+        <table>
+          <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th class="no-print">Xóa</th></tr></thead>
+          <tbody id="exportItemsTable"></tbody>
+        </table>
+        <button id="submitExport" style="margin-top:10px;">Lưu phiếu xuất</button>
       </div>
       <div class="card">
+        <h2>Danh sách phiếu xuất</h2>
         <table>
-          <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Hành động</th></tr></thead>
-          <tbody id="exportTable"></tbody>
+          <thead><tr><th>Mã phiếu</th><th>Chi tiết sản phẩm</th><th class="no-print">In</th></tr></thead>
+          <tbody id="exportReceiptsTable"></tbody>
         </table>
       </div>
     </div>
+
   </div>
 </div>
 
 <script>
-// Tab switch
-const tabs=document.querySelectorAll('.sidebar ul li');
-const contents=document.querySelectorAll('.tab-content');
+// Tabs
+const tabs=document.querySelectorAll('.tab'); const contents=document.querySelectorAll('.tab-content');
+tabs.forEach(tab=>tab.addEventListener('click',()=>{
+  tabs.forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  contents.forEach(c=>c.style.display=c.id===tab.dataset.tab?'block':'none');
+}));
 
-tabs.forEach(tab=>{
-  tab.addEventListener('click', async ()=>{
-    tabs.forEach(t=>t.classList.remove('active'));
-    tab.classList.add('active');
-    contents.forEach(c=>c.style.display=c.id===tab.dataset.tab?'block':'none');
+let importItems=[], exportItems=[];
 
-    if(tab.dataset.tab==='import') await initImportRow();
-    if(tab.dataset.tab==='export') await initExportRow();
-  });
-});
-
-// ---------------- Load data ----------------
+// Load products
 async function loadProducts(){
   const res=await fetch('/api/products'); const data=await res.json();
   const tbody=document.getElementById('productTable'); tbody.innerHTML='';
+  const importSel=document.getElementById('importProduct'); importSel.innerHTML='<option value="">Chọn sản phẩm</option>';
+  const exportSel=document.getElementById('exportProduct'); exportSel.innerHTML='<option value="">Chọn sản phẩm</option>';
   data.forEach(p=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${p.name}</td><td>${p.price.toLocaleString()}</td><td>${p.description||''}</td><td></td>`;
-    tbody.appendChild(tr);
+    const tr=document.createElement('tr'); tr.innerHTML=`<td>${p.name}</td><td>${p.price}</td><td>${p.description||''}</td>`; tbody.appendChild(tr);
+    const opt1=document.createElement('option'); opt1.value=p._id; opt1.text=p.name; importSel.add(opt1);
+    const opt2=document.createElement('option'); opt2.value=p._id; opt2.text=p.name; exportSel.add(opt2);
   });
-  await loadInventory(); await loadInbound(); await loadOutbound();
+  loadInventory(); loadInboundReceipts(); loadOutboundReceipts();
 }
 
+// Inventory
 async function loadInventory(){
   const res=await fetch('/api/warehouse'); const data=await res.json();
   const tbody=document.getElementById('inventoryTable'); tbody.innerHTML='';
   data.forEach(w=>{const tr=document.createElement('tr'); tr.innerHTML=`<td>${w.productId.name}</td><td>${w.stock}</td>`; tbody.appendChild(tr);});
 }
 
-async function loadInbound(){
+// Import multi
+document.getElementById('addImportItem').addEventListener('click', ()=>{
+  const pid=document.getElementById('importProduct').value;
+  const qty=+document.getElementById('importQty').value;
+  if(!pid||qty<=0) return alert('Chọn sản phẩm và số lượng >0');
+  importItems.push({productId:pid, quantity:qty});
+  renderImportItems();
+});
+function renderImportItems(){
+  const tbody=document.getElementById('importItemsTable'); tbody.innerHTML='';
+  importItems.forEach((it,idx)=>{
+    const name=document.getElementById('importProduct').selectedOptions[0].text;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${name}</td><td>${it.quantity}</td><td class="no-print"><button onclick="importItems.splice(${idx},1);renderImportItems();" class="delete-btn">Xóa</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+document.getElementById('submitImport').addEventListener('click', async ()=>{
+  if(importItems.length===0) return alert('Chưa có sản phẩm nào');
+  const res=await fetch('/api/inbound',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:importItems})});
+  if(res.ok){ alert('Nhập kho thành công'); importItems=[]; renderImportItems(); loadInventory(); loadInboundReceipts();}
+  else{ const err=await res.json(); alert(err.error);}
+});
+
+// Export multi
+document.getElementById('addExportItem').addEventListener('click', ()=>{
+  const pid=document.getElementById('exportProduct').value;
+  const qty=+document.getElementById('exportQty').value;
+  if(!pid||qty<=0) return alert('Chọn sản phẩm và số lượng >0');
+  exportItems.push({productId:pid, quantity:qty});
+  renderExportItems();
+});
+function renderExportItems(){
+  const tbody=document.getElementById('exportItemsTable'); tbody.innerHTML='';
+  exportItems.forEach((it,idx)=>{
+    const name=document.getElementById('exportProduct').selectedOptions[0].text;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${name}</td><td>${it.quantity}</td><td class="no-print"><button onclick="exportItems.splice(${idx},1);renderExportItems();" class="delete-btn">Xóa</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+document.getElementById('submitExport').addEventListener('click', async ()=>{
+  if(exportItems.length===0) return alert('Chưa có sản phẩm nào');
+  const whRes=await fetch('/api/warehouse'); const whData=await whRes.json();
+  for(const it of exportItems){
+    const stock=whData.find(w=>w.productId._id===it.productId)?.stock||0;
+    if(it.quantity>stock) return alert(`Sản phẩm ${it.productId} vượt tồn kho (còn ${stock})`);
+  }
+  const res=await fetch('/api/outbound',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:exportItems})});
+  if(res.ok){ alert('Xuất kho thành công'); exportItems=[]; renderExportItems(); loadInventory(); loadOutboundReceipts();}
+  else{ const err=await res.json(); alert(err.error);}
+});
+
+// Phiếu nhập xuất hiển thị kiểu hóa đơn
+async function loadInboundReceipts(){
   const res=await fetch('/api/inbound'); const data=await res.json();
-  const tbody=document.getElementById('importTable'); tbody.innerHTML='';
-  data.forEach(i=>{
+  const tbody=document.getElementById('importReceiptsTable'); tbody.innerHTML='';
+  data.forEach(r=>{
+    const items = r.items.map(i=>`${i.productId.name} (${i.quantity})`).join(', ');
     const tr=document.createElement('tr');
-    const itemsText=i.items.map(it=>`${it.productId.name} (${it.quantity})`).join(', ');
-    tr.innerHTML=`<td>${itemsText}</td><td>-</td>
-      <td>
-        <button class="action-btn delete-btn" onclick="delInbound('${i._id}')">Xóa</button>
-        <button class="action-btn edit-btn" onclick="printInbound('${i._id}')">In</button>
-      </td>`;
+    tr.innerHTML=`<td>${r.code}</td><td>${items}</td><td class="no-print"><button onclick="window.print()">In hóa đơn</button></td>`;
     tbody.appendChild(tr);
   });
 }
-
-async function loadOutbound(){
+async function loadOutboundReceipts(){
   const res=await fetch('/api/outbound'); const data=await res.json();
-  const tbody=document.getElementById('exportTable'); tbody.innerHTML='';
-  data.forEach(o=>{
+  const tbody=document.getElementById('exportReceiptsTable'); tbody.innerHTML='';
+  data.forEach(r=>{
+    const items = r.items.map(i=>`${i.productId.name} (${i.quantity})`).join(', ');
     const tr=document.createElement('tr');
-    const itemsText=o.items.map(it=>`${it.productId.name} (${it.quantity})`).join(', ');
-    tr.innerHTML=`<td>${itemsText}</td><td>-</td>
-      <td>
-        <button class="action-btn delete-btn" onclick="delOutbound('${o._id}')">Xóa</button>
-        <button class="action-btn edit-btn" onclick="printOutbound('${o._id}')">In</button>
-      </td>`;
+    tr.innerHTML=`<td>${r.code}</td><td>${items}</td><td class="no-print"><button onclick="window.print()">In hóa đơn</button></td>`;
     tbody.appendChild(tr);
   });
 }
 
-// ---------------- Add product ----------------
+// Add product
 document.getElementById('addForm').addEventListener('submit', async e=>{
   e.preventDefault();
   const name=document.getElementById('addName').value;
@@ -198,88 +254,11 @@ document.getElementById('addForm').addEventListener('submit', async e=>{
   const desc=document.getElementById('addDesc').value;
   await fetch('/api/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,price,description:desc})});
   e.target.reset();
-  await loadProducts();
+  loadProducts();
 });
 
-// ---------------- Add/remove rows ----------------
-async function addImportRow(){
-  const container=document.getElementById('importRows');
-  const row=document.createElement('div'); row.className='row-item';
-  row.innerHTML=`<select class="importProduct" required></select><input type="number" class="importQty" placeholder="Số lượng" required><button type="button" onclick="removeRow(this)">Xóa</button>`;
-  container.appendChild(row);
-  const sel=row.querySelector('select');
-  const products=await fetch('/api/products').then(r=>r.json());
-  products.forEach(p=>{const opt=document.createElement('option'); opt.value=p._id; opt.text=p.name; sel.add(opt);});
-}
-
-async function addExportRow(){
-  const container=document.getElementById('exportRows');
-  const row=document.createElement('div'); row.className='row-item';
-  row.innerHTML=`<select class="exportProduct" required></select><input type="number" class="exportQty" placeholder="Số lượng" required><button type="button" onclick="removeRow(this)">Xóa</button>`;
-  container.appendChild(row);
-  const sel=row.querySelector('select');
-  const products=await fetch('/api/products').then(r=>r.json());
-  products.forEach(p=>{const opt=document.createElement('option'); opt.value=p._id; opt.text=p.name; sel.add(opt);});
-}
-
-function removeRow(btn){btn.parentElement.remove();}
-
-// ---------------- Init row on tab switch ----------------
-async function initImportRow(){const container=document.getElementById('importRows'); if(container.children.length===0) await addImportRow();}
-async function initExportRow(){const container=document.getElementById('exportRows'); if(container.children.length===0) await addExportRow();}
-
-// ---------------- Submit Inbound/Outbound ----------------
-document.getElementById('importForm').addEventListener('submit', async e=>{
-  e.preventDefault();
-  const rows=document.querySelectorAll('#importRows .row-item');
-  const items=Array.from(rows).map(r=>({productId:r.querySelector('select').value,quantity:+r.querySelector('input').value}));
-  if(items.length===0) return;
-  await fetch('/api/inbound',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
-  document.getElementById('importRows').innerHTML='';
-  await loadInventory(); await loadInbound();
-});
-
-document.getElementById('exportForm').addEventListener('submit', async e=>{
-  e.preventDefault();
-  const errDiv=document.getElementById('exportError'); errDiv.innerText='';
-  const rows=document.querySelectorAll('#exportRows .row-item');
-  const items=Array.from(rows).map(r=>({productId:r.querySelector('select').value,quantity:+r.querySelector('input').value}));
-  if(items.length===0) return;
-  const whData=await fetch('/api/warehouse').then(r=>r.json());
-  for(const it of items){
-    const stock=whData.find(w=>w.productId._id===it.productId)?.stock||0;
-    if(it.quantity>stock){errDiv.innerText=`Sản phẩm ${it.productId} vượt tồn kho (${stock})`; return;}
-  }
-  await fetch('/api/outbound',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
-  document.getElementById('exportRows').innerHTML='';
-  await loadInventory(); await loadOutbound();
-});
-
-// ---------------- Delete ----------------
-async function delInbound(id){await fetch('/api/inbound/'+id,{method:'DELETE'});await loadInventory();await loadInbound();}
-async function delOutbound(id){await fetch('/api/outbound/'+id,{method:'DELETE'});await loadInventory();await loadOutbound();}
-
-// ---------------- Print ----------------
-async function printInbound(id){
-  const data=await fetch('/api/inbound').then(r=>r.json());
-  const receipt=data.find(r=>r._id===id);
-  if(!receipt) return alert('Không tìm thấy phiếu');
-  const rows=receipt.items.map((i,idx)=>`<tr><td>${idx+1}</td><td>${i.productId.name}</td><td>${i.quantity}</td></tr>`).join('');
-  const html=`<html><head><title>Phiếu nhập</title><style>body{font-family:sans-serif;padding:20px;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #000;padding:8px;text-align:left;}</style></head><body><h2>Phiếu nhập</h2><p>Mã phiếu: ${receipt._id}</p><p>Ngày: ${new Date(receipt.createdAt).toLocaleString()}</p><table><thead><tr><th>STT</th><th>Sản phẩm</th><th>Số lượng</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
-  const w=window.open('','_blank'); w.document.write(html); w.document.close(); w.print();
-}
-
-async function printOutbound(id){
-  const data=await fetch('/api/outbound').then(r=>r.json());
-  const receipt=data.find(r=>r._id===id);
-  if(!receipt) return alert('Không tìm thấy phiếu');
-  const rows=receipt.items.map((i,idx)=>`<tr><td>${idx+1}</td><td>${i.productId.name}</td><td>${i.quantity}</td></tr>`).join('');
-  const html=`<html><head><title>Phiếu xuất</title><style>body{font-family:sans-serif;padding:20px;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #000;padding:8px;text-align:left;}</style></head><body><h2>Phiếu xuất</h2><p>Mã phiếu: ${receipt._id}</p><p>Ngày: ${new Date(receipt.createdAt).toLocaleString()}</p><table><thead><tr><th>STT</th><th>Sản phẩm</th><th>Số lượng</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
-  const w=window.open('','_blank'); w.document.write(html); w.document.close(); w.print();
-}
-
-// ---------------- Init ----------------
 loadProducts();
 </script>
+
 </body>
 </html>

@@ -1,13 +1,15 @@
-import mongoose from "mongoose";
+// models/InboundReceipt.js
+import mongoose from 'mongoose';
+const { Schema, model } = mongoose;
 
-const InboundSchema = new mongoose.Schema({
-  items: [
-    {
-      productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-      quantity: Number,
-    },
-  ],
-  createdAt: { type: Date, default: Date.now },
+const InboundItemSchema = new Schema({
+  productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+  quantity: { type: Number, required: true }
 });
 
-export default mongoose.model("Inbound", InboundSchema);
+const InboundReceiptSchema = new Schema({
+  code: { type: String, required: true, unique: true },
+  items: [InboundItemSchema],
+}, { timestamps: true });
+
+export default model('InboundReceipt', InboundReceiptSchema);

@@ -1,171 +1,154 @@
-import 'dotenv/config'; // đọc .env
-import express from "express";
-import mongoose from "mongoose";
-import path from "path";
+import express from 'express';
+import mongoose from 'mongoose';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
-import Product from "./models/Product.js";
-import Warehouse from "./models/Warehouse.js";
-import Inbound from "./models/Inbound.js";
-import Outbound from "./models/Outbound.js";
+dotenv.config();
 
-const __dirname = path.resolve();
+import Product from './models/Product.js';
+import InboundReceipt from './models/InboundReceipt.js';
+import OutboundReceipt from './models/OutboundReceipt.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// --- MongoDB ---
-console.log("MONGO_URI =", process.env.MONGO_URI); // debug
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000
-})
-.then(() => console.log("MongoDB connected"))
-.catch(err => console.error("MongoDB error:", err));
+// MongoDB connection
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(()=>console.log('MongoDB connected'))
+  .catch(err=>console.error('MongoDB error', err));
 
-//
-// ------------------ PRODUCTS ------------------
-app.get("/api/products", async (req, res) => {
-  const data = await Product.find();
-  res.json(data);
-});
+// ------------------- Helper: generate code -------------------
+async function generateCode(prefix, Model){
+  const count = await Model.countDocuments();
+  return `${prefix}${String(count + 1).padStart(4,'0')}`;
+}
 
-app.post("/api/products", async (req, res) => {
+// ------------------- PRODUCTS -------------------
+app.get('/api/products', async(req,res)=>{
   try {
-    const { name, price, description } = req.body;
-    if (!name || !price) return res.status(400).json({ error: "Tên và giá là bắt buộc" });
-
-    const product = new Product({ name, price, description });
-    await product.save();
-
-    // Tạo kho mặc định
-    await new Warehouse({ productId: product._id, stock: 0 }).save();
-
-    res.status(201).json(product);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Lỗi server" });
-  }
+    const products = await Product.find();
+    res.json(products);
+  } catch(err) { res.status(500).json({error: err.message}); }
 });
 
-//
-// ------------------ WAREHOUSE ------------------
-app.get("/api/warehouse", async (req, res) => {
-  const data = await Warehouse.find().populate("productId");
-  res.json(data);
+app.post('/api/products', async(req,res)=>{
+  try {
+    const p = new Product(req.body);
+    await p.save();
+    res.status(201).json(p);
+  } catch(err) { res.status(400).json({error: err.message}); }
 });
 
-//
-// ------------------ INBOUND ------------------
-app.get("/api/inbound", async (req, res) => {
-  const data = await Inbound.find().populate("items.productId");
-  res.json(data);
+// ------------------- INBOUND -------------------
+app.get('/api/inbound', async(req,res)=>{
+  try {
+    const data = await InboundReceipt.find().populate('items.productId').sort({createdAt:-1});
+    res.json(data);
+  } catch(err) { res.status(500).json({error: err.message}); }
 });
 
-app.post("/api/inbound", async (req, res) => {
+app.post('/api/inbound', async(req,res)=>{
   try {
     const { items } = req.body;
-    if (!items || !Array.isArray(items) || items.length === 0)
-      return res.status(400).json({ error: "Items required" });
+    if(!items || !Array.isArray(items) || items.length === 0)
+      return res.status(400).json({error: 'Items required'});
 
-    const inbound = new Inbound({ items });
-    await inbound.save();
-
-    for (const item of items) {
-      await Warehouse.findOneAndUpdate(
-        { productId: item.productId },
-        { $inc: { stock: item.quantity } }
-      );
-    }
-
-    res.status(201).json(inbound);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Lỗi server" });
-  }
+    const code = await generateCode('PN', InboundReceipt);
+    const receipt = new InboundReceipt({ code, items });
+    await receipt.save();
+    await receipt.populate('items.productId');
+    res.status(201).json(receipt);
+  } catch(err) { res.status(500).json({error: err.message}); }
 });
 
-app.delete("/api/inbound/:id", async (req, res) => {
+app.delete('/api/inbound/:id', async(req,res)=>{
   try {
-    const inbound = await Inbound.findById(req.params.id);
-    if (!inbound) return res.status(404).json({ message: "Not found" });
-
-    for (const item of inbound.items) {
-      await Warehouse.findOneAndUpdate(
-        { productId: item.productId },
-        { $inc: { stock: -item.quantity } }
-      );
-    }
-
-    await inbound.deleteOne();
-    res.json({ message: "Deleted" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Lỗi server" });
-  }
+    await InboundReceipt.findByIdAndDelete(req.params.id);
+    res.json({message: 'Deleted'});
+  } catch(err) { res.status(500).json({error: err.message}); }
 });
 
-//
-// ------------------ OUTBOUND ------------------
-app.get("/api/outbound", async (req, res) => {
-  const data = await Outbound.find().populate("items.productId");
-  res.json(data);
+// ------------------- OUTBOUND -------------------
+async function getStock(productId){
+  const objId = new mongoose.Types.ObjectId(productId);
+
+  const inAgg = await InboundReceipt.aggregate([
+    { $unwind: '$items' },
+    { $match: { 'items.productId': objId } },
+    { $group: { _id:null, total: { $sum: '$items.quantity' } } }
+  ]);
+
+  const outAgg = await OutboundReceipt.aggregate([
+    { $unwind: '$items' },
+    { $match: { 'items.productId': objId } },
+    { $group: { _id:null, total: { $sum: '$items.quantity' } } }
+  ]);
+
+  return (inAgg[0]?.total || 0) - (outAgg[0]?.total || 0);
+}
+
+app.get('/api/outbound', async(req,res)=>{
+  try {
+    const data = await OutboundReceipt.find().populate('items.productId').sort({createdAt:-1});
+    res.json(data);
+  } catch(err) { res.status(500).json({error: err.message}); }
 });
 
-app.post("/api/outbound", async (req, res) => {
+app.post('/api/outbound', async(req,res)=>{
   try {
     const { items } = req.body;
-    if (!items || !Array.isArray(items) || items.length === 0)
-      return res.status(400).json({ error: "Items required" });
+    if(!items || !Array.isArray(items) || items.length === 0)
+      return res.status(400).json({error: 'Items required'});
 
-    for (const item of items) {
-      const wh = await Warehouse.findOne({ productId: item.productId });
-      if (!wh || wh.stock < item.quantity)
-        return res.status(400).json({ error: `Sản phẩm ${item.productId} vượt tồn kho` });
+    for(const it of items){
+      const stock = await getStock(it.productId);
+      if(it.quantity > stock)
+        return res.status(400).json({error: `Sản phẩm ${it.productId} vượt tồn kho (còn ${stock})`});
     }
 
-    const outbound = new Outbound({ items });
-    await outbound.save();
-
-    for (const item of items) {
-      await Warehouse.findOneAndUpdate(
-        { productId: item.productId },
-        { $inc: { stock: -item.quantity } }
-      );
-    }
-
-    res.status(201).json(outbound);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Lỗi server" });
-  }
+    const code = await generateCode('PX', OutboundReceipt);
+    const receipt = new OutboundReceipt({ code, items });
+    await receipt.save();
+    await receipt.populate('items.productId');
+    res.status(201).json(receipt);
+  } catch(err) { res.status(500).json({error: err.message}); }
 });
 
-app.delete("/api/outbound/:id", async (req, res) => {
+app.delete('/api/outbound/:id', async(req,res)=>{
   try {
-    const outbound = await Outbound.findById(req.params.id);
-    if (!outbound) return res.status(404).json({ message: "Not found" });
-
-    for (const item of outbound.items) {
-      await Warehouse.findOneAndUpdate(
-        { productId: item.productId },
-        { $inc: { stock: item.quantity } }
-      );
-    }
-
-    await outbound.deleteOne();
-    res.json({ message: "Deleted" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Lỗi server" });
-  }
+    await OutboundReceipt.findByIdAndDelete(req.params.id);
+    res.json({message: 'Deleted'});
+  } catch(err) { res.status(500).json({error: err.message}); }
 });
 
-//
-// ------------------ SPA fallback ------------------
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/index.html"));
+// ------------------- WAREHOUSE -------------------
+app.get('/api/warehouse', async(req,res)=>{
+  try {
+    const products = await Product.find();
+    const inbounds = await InboundReceipt.find();
+    const outbounds = await OutboundReceipt.find();
+
+    const warehouse = products.map(p=>{
+      const inQty = inbounds.filter(i=>i.items.some(it=>it.productId.toString() === p._id.toString()))
+        .reduce((a,b)=>a+b.items.reduce((x,it)=>x+it.quantity,0),0);
+
+      const outQty = outbounds.filter(o=>o.items.some(it=>it.productId.toString() === p._id.toString()))
+        .reduce((a,b)=>a+b.items.reduce((x,it)=>x+it.quantity,0),0);
+
+      return { productId:{ _id: p._id, name: p.name }, stock: inQty - outQty };
+    });
+
+    res.json(warehouse);
+  } catch(err) { res.status(500).json({error: err.message}); }
 });
+
+// ------------------- SPA fallback -------------------
+app.get('*', (req,res)=> res.sendFile(path.join(__dirname,'public','index.html')));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Server running on port " + PORT));
+app.listen(PORT, ()=>console.log(`Server running on port ${PORT}`));
