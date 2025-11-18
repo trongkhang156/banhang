@@ -1,10 +1,13 @@
-// models/Outbound.js
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
-const outboundSchema = new mongoose.Schema({
-  productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-  quantity: { type: Number, required: true },
-  date: { type: String, required: true } // để dạng string
-}, { timestamps: true });
+const OutboundSchema = new mongoose.Schema({
+  items: [
+    {
+      productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+      quantity: Number,
+    },
+  ],
+  createdAt: { type: Date, default: Date.now },
+});
 
-module.exports = mongoose.model('Outbound', outboundSchema);
+export default mongoose.model("Outbound", OutboundSchema);

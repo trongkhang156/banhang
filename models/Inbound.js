@@ -1,10 +1,13 @@
-// models/Inbound.js
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
-const inboundSchema = new mongoose.Schema({
-  productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-  quantity: { type: Number, required: true },
-  date: { type: String, required: true }  // lưu ngày dưới dạng string
-}, { timestamps: true });
+const InboundSchema = new mongoose.Schema({
+  items: [
+    {
+      productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+      quantity: Number,
+    },
+  ],
+  createdAt: { type: Date, default: Date.now },
+});
 
-module.exports = mongoose.model('Inbound', inboundSchema);
+export default mongoose.model("Inbound", InboundSchema);

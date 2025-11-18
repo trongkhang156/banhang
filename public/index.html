@@ -6,70 +6,61 @@
 <title>Quản lý kho</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Roboto', sans-serif; background:#eef1f5; }
-.wrapper { display:flex; min-height:100vh; }
-
-/* Sidebar */
-.sidebar { width:220px; background:#2c3e50; color:#fff; flex-shrink:0; }
-.sidebar h2 { text-align:center; padding:20px 0; font-weight:700; font-size:20px; border-bottom:1px solid #34495e; }
-.sidebar ul { list-style:none; }
-.sidebar ul li { padding:15px 20px; cursor:pointer; transition:0.2s; }
-.sidebar ul li:hover, .sidebar ul li.active { background:#34495e; }
-
-/* Content */
-.content { flex:1; padding:20px; }
-h1 { text-align:center; font-size:32px; font-weight:700; margin-bottom:30px; color:#2d3e50; }
-.card { background:#fff; padding:25px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.07); margin-bottom:30px; }
-h2 { margin-bottom:20px; font-size:22px; font-weight:600; color:#34495e; }
-
-/* Forms */
-form { display:grid; grid-template-columns: repeat(3, 1fr); gap:15px 20px; align-items:center; }
-form input, form select { width:100%; padding:12px; border-radius:8px; border:1px solid #cfd4dc; font-size:15px; background:#fafbfd; transition:0.2s; }
-form input:focus, form select:focus { border-color:#3498db; box-shadow:0 0 6px rgba(52,152,219,0.25); outline:none; }
-.form-actions { grid-column: span 3; display:flex; justify-content:center; margin-top:10px; }
-.btn-add { background:#27ae60; color:#fff; padding:15px 40px; font-size:18px; border-radius:10px; border:none; cursor:pointer; font-weight:600; width:260px; }
-.btn-add:hover { background:#1e8449; }
-
-/* Table */
-table { width:100%; border-collapse:collapse; background:white; border-radius:12px; overflow:hidden; table-layout:fixed; }
-th, td { padding:14px 16px; font-size:15px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:middle; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-th { background:#3498db; color:white; font-weight:600; text-transform:uppercase; font-size:14px; }
-tr:hover { background:#f7fbff; }
-
-/* Action buttons */
-.action-btn { padding:7px 14px; border:none; border-radius:8px; font-size:14px; cursor:pointer; font-weight:600; transition:0.2s; margin-right:5px; }
-.edit-btn { background:#f1c40f; color:#fff; } .edit-btn:hover { background:#d4ac0d; }
-.delete-btn { background:#e74c3c; color:#fff; } .delete-btn:hover { background:#c0392b; }
-.save-btn { background:#3498db; color:#fff; } .save-btn:hover { background:#2b7cb5; }
-.cancel-btn { background:#e67e22; color:#fff; } .cancel-btn:hover { background:#d35400; }
-input.inline-edit { width:100%; padding:6px; border-radius:5px; border:1px solid #cfd4dc; font-size:14px; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Roboto',sans-serif;background:#eef1f5;}
+.wrapper{display:flex;min-height:100vh;}
+.sidebar{width:220px;background:#2c3e50;color:#fff;flex-shrink:0;}
+.sidebar h2{text-align:center;padding:20px 0;font-weight:700;font-size:20px;border-bottom:1px solid #34495e;}
+.sidebar ul{list-style:none;}
+.sidebar ul li{padding:15px 20px;cursor:pointer;transition:0.2s;}
+.sidebar ul li:hover,.sidebar ul li.active{background:#34495e;}
+.content{flex:1;padding:20px;}
+h1{text-align:center;font-size:32px;font-weight:700;margin-bottom:30px;color:#2d3e50;}
+.card{background:#fff;padding:25px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.07);margin-bottom:30px;}
+h2{margin-bottom:20px;font-size:22px;font-weight:600;color:#34495e;}
+form{display:grid;grid-template-columns: repeat(3, 1fr);gap:15px 20px;align-items:center;}
+form input, form select{width:100%;padding:12px;border-radius:8px;border:1px solid #cfd4dc;font-size:15px;background:#fafbfd;transition:0.2s;}
+form input:focus, form select:focus{border-color:#3498db;box-shadow:0 0 6px rgba(52,152,219,0.25);outline:none;}
+.form-actions{grid-column: span 3; display:flex; justify-content:center; margin-top:10px;}
+.btn-add{background:#27ae60;color:#fff;padding:15px 40px;font-size:18px;border-radius:10px;border:none;cursor:pointer;font-weight:600;width:260px;}
+.btn-add:hover{background:#1e8449;}
+table{width:100%;border-collapse:collapse;background:white;border-radius:12px;overflow:hidden;table-layout:fixed;}
+th, td{padding:14px 16px;font-size:15px;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+th{background:#3498db;color:white;font-weight:600;text-transform:uppercase;font-size:14px;}
+tr:hover{background:#f7fbff;}
+.action-btn{padding:7px 14px;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;transition:0.2s;margin-right:5px;}
+.edit-btn{background:#f1c40f;color:#fff;} .edit-btn:hover{background:#d4ac0d;}
+.delete-btn{background:#e74c3c;color:#fff;} .delete-btn:hover{background:#c0392b;}
+.error-msg{color:red;margin-top:5px;}
+.row-item{display:flex;gap:10px;margin-bottom:10px;}
+.row-item select,input{flex:1;}
+.row-item button{flex-shrink:0;}
 </style>
 </head>
 <body>
-
 <div class="wrapper">
   <div class="sidebar">
     <h2>Quản lý kho</h2>
     <ul>
       <li class="active" data-tab="products">Sản phẩm</li>
-      <li data-tab="inbound">Phiếu nhập</li>
-      <li data-tab="outbound">Phiếu xuất</li>
-      <li data-tab="warehouse">Tồn kho</li>
+      <li data-tab="inventory">Tồn kho</li>
+      <li data-tab="import">Phiếu nhập</li>
+      <li data-tab="export">Phiếu xuất</li>
     </ul>
   </div>
-
   <div class="content">
-    <!-- Products -->
+    <!-- Sản phẩm -->
     <div id="products" class="tab-content">
-      <h1>Quản lý sản phẩm</h1>
+      <h1>Sản phẩm</h1>
       <div class="card">
         <h2>Thêm sản phẩm</h2>
-        <form id="addProductForm">
-          <input type="text" id="productName" placeholder="Tên sản phẩm" required>
-          <input type="number" id="productPrice" placeholder="Giá" required>
-          <input type="text" id="productDesc" placeholder="Mô tả">
-          <div class="form-actions"><button type="submit" class="btn-add">Thêm</button></div>
+        <form id="addForm">
+          <input type="text" id="addName" placeholder="Tên sản phẩm" required>
+          <input type="number" id="addPrice" placeholder="Giá" required>
+          <input type="text" id="addDesc" placeholder="Mô tả">
+          <div class="form-actions">
+            <button type="submit" class="btn-add">Thêm sản phẩm</button>
+          </div>
         </form>
       </div>
       <div class="card">
@@ -81,56 +72,54 @@ input.inline-edit { width:100%; padding:6px; border-radius:5px; border:1px solid
       </div>
     </div>
 
-    <!-- Inbound -->
-    <div id="inbound" class="tab-content" style="display:none;">
-      <h1>Phiếu nhập</h1>
-      <div class="card">
-        <h2>Thêm phiếu nhập</h2>
-        <form id="addInboundForm">
-          <select id="inboundProduct" required></select>
-          <input type="number" id="inboundQty" placeholder="Số lượng" required>
-          <input type="date" id="inboundDate" required>
-          <div class="form-actions"><button type="submit" class="btn-add">Thêm</button></div>
-        </form>
-      </div>
-      <div class="card">
-        <h2>Danh sách phiếu nhập</h2>
-        <table>
-          <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Ngày</th><th>Hành động</th></tr></thead>
-          <tbody id="inboundTable"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Outbound -->
-    <div id="outbound" class="tab-content" style="display:none;">
-      <h1>Phiếu xuất</h1>
-      <div class="card">
-        <h2>Thêm phiếu xuất</h2>
-        <form id="addOutboundForm">
-          <select id="outboundProduct" required></select>
-          <input type="number" id="outboundQty" placeholder="Số lượng" required>
-          <input type="date" id="outboundDate" required>
-          <div class="form-actions"><button type="submit" class="btn-add">Thêm</button></div>
-        </form>
-      </div>
-      <div class="card">
-        <h2>Danh sách phiếu xuất</h2>
-        <table>
-          <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Ngày</th><th>Hành động</th></tr></thead>
-          <tbody id="outboundTable"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Warehouse -->
-    <div id="warehouse" class="tab-content" style="display:none;">
+    <!-- Tồn kho -->
+    <div id="inventory" class="tab-content" style="display:none;">
       <h1>Tồn kho</h1>
       <div class="card">
-        <h2>Danh sách tồn kho</h2>
         <table>
-          <thead><tr><th>Sản phẩm</th><th>Số lượng tồn</th></tr></thead>
-          <tbody id="warehouseTable"></tbody>
+          <thead><tr><th>Sản phẩm</th><th>Tồn</th></tr></thead>
+          <tbody id="inventoryTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Phiếu nhập -->
+    <div id="import" class="tab-content" style="display:none;">
+      <h1>Phiếu nhập</h1>
+      <div class="card">
+        <form id="importForm">
+          <div id="importRows"></div>
+          <button type="button" onclick="addImportRow()" class="btn-add">Thêm sản phẩm</button>
+          <div class="form-actions">
+            <button type="submit" class="btn-add">Nhập kho</button>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Hành động</th></tr></thead>
+          <tbody id="importTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Phiếu xuất -->
+    <div id="export" class="tab-content" style="display:none;">
+      <h1>Phiếu xuất</h1>
+      <div class="card">
+        <form id="exportForm">
+          <div id="exportRows"></div>
+          <button type="button" onclick="addExportRow()" class="btn-add">Thêm sản phẩm</button>
+          <div class="error-msg" id="exportError"></div>
+          <div class="form-actions">
+            <button type="submit" class="btn-add">Xuất kho</button>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Hành động</th></tr></thead>
+          <tbody id="exportTable"></tbody>
         </table>
       </div>
     </div>
@@ -139,115 +128,158 @@ input.inline-edit { width:100%; padding:6px; border-radius:5px; border:1px solid
 
 <script>
 // Tab switch
-const tabs = document.querySelectorAll('.sidebar ul li');
-const contents = document.querySelectorAll('.tab-content');
+const tabs=document.querySelectorAll('.sidebar ul li');
+const contents=document.querySelectorAll('.tab-content');
+
 tabs.forEach(tab=>{
-  tab.addEventListener('click', ()=>{
+  tab.addEventListener('click', async ()=>{
     tabs.forEach(t=>t.classList.remove('active'));
     tab.classList.add('active');
-    const target = tab.dataset.tab;
-    contents.forEach(c => c.style.display = c.id===target?'block':'none');
+    contents.forEach(c=>c.style.display=c.id===tab.dataset.tab?'block':'none');
+
+    if(tab.dataset.tab==='import') await initImportRow();
+    if(tab.dataset.tab==='export') await initExportRow();
   });
 });
 
-// ====== Products ======
-function loadProducts() {
-  fetch('/api/products').then(r=>r.json()).then(data=>{
-    const tbody = document.getElementById('productTable');
-    const inboundSelect = document.getElementById('inboundProduct');
-    const outboundSelect = document.getElementById('outboundProduct');
-    tbody.innerHTML='';
-    inboundSelect.innerHTML='<option value="">Chọn sản phẩm</option>';
-    outboundSelect.innerHTML='<option value="">Chọn sản phẩm</option>';
-    data.forEach(p=>{
-      // Table
-      const tr = document.createElement('tr');
-      tr.innerHTML=`<td>${p.name}</td><td>${p.price.toLocaleString()} đ</td><td>${p.description||''}</td>
-        <td>
-          <button class="action-btn delete-btn" onclick="deleteProduct('${p._id}')">Xóa</button>
-        </td>`;
-      tbody.appendChild(tr);
-      // Dropdown
-      const option1 = document.createElement('option'); option1.value=p._id; option1.text=p.name; inboundSelect.appendChild(option1);
-      const option2 = document.createElement('option'); option2.value=p._id; option2.text=p.name; outboundSelect.appendChild(option2);
-    });
+// ---------------- Load data ----------------
+async function loadProducts(){
+  const res=await fetch('/api/products'); const data=await res.json();
+  const tbody=document.getElementById('productTable'); tbody.innerHTML='';
+  data.forEach(p=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${p.name}</td><td>${p.price.toLocaleString()}</td><td>${p.description||''}</td><td></td>`;
+    tbody.appendChild(tr);
+  });
+  await loadInventory(); await loadInbound(); await loadOutbound();
+}
+
+async function loadInventory(){
+  const res=await fetch('/api/warehouse'); const data=await res.json();
+  const tbody=document.getElementById('inventoryTable'); tbody.innerHTML='';
+  data.forEach(w=>{const tr=document.createElement('tr'); tr.innerHTML=`<td>${w.productId.name}</td><td>${w.stock}</td>`; tbody.appendChild(tr);});
+}
+
+async function loadInbound(){
+  const res=await fetch('/api/inbound'); const data=await res.json();
+  const tbody=document.getElementById('importTable'); tbody.innerHTML='';
+  data.forEach(i=>{
+    const tr=document.createElement('tr');
+    const itemsText=i.items.map(it=>`${it.productId.name} (${it.quantity})`).join(', ');
+    tr.innerHTML=`<td>${itemsText}</td><td>-</td>
+      <td>
+        <button class="action-btn delete-btn" onclick="delInbound('${i._id}')">Xóa</button>
+        <button class="action-btn edit-btn" onclick="printInbound('${i._id}')">In</button>
+      </td>`;
+    tbody.appendChild(tr);
   });
 }
-document.getElementById('addProductForm').addEventListener('submit', e=>{
+
+async function loadOutbound(){
+  const res=await fetch('/api/outbound'); const data=await res.json();
+  const tbody=document.getElementById('exportTable'); tbody.innerHTML='';
+  data.forEach(o=>{
+    const tr=document.createElement('tr');
+    const itemsText=o.items.map(it=>`${it.productId.name} (${it.quantity})`).join(', ');
+    tr.innerHTML=`<td>${itemsText}</td><td>-</td>
+      <td>
+        <button class="action-btn delete-btn" onclick="delOutbound('${o._id}')">Xóa</button>
+        <button class="action-btn edit-btn" onclick="printOutbound('${o._id}')">In</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ---------------- Add product ----------------
+document.getElementById('addForm').addEventListener('submit', async e=>{
   e.preventDefault();
-  const body={name:document.getElementById('productName').value,
-              price:Number(document.getElementById('productPrice').value),
-              description:document.getElementById('productDesc').value};
-  fetch('/api/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-    .then(()=>{ loadProducts(); e.target.reset(); loadWarehouse(); });
+  const name=document.getElementById('addName').value;
+  const price=+document.getElementById('addPrice').value;
+  const desc=document.getElementById('addDesc').value;
+  await fetch('/api/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,price,description:desc})});
+  e.target.reset();
+  await loadProducts();
 });
-window.deleteProduct=id=>{if(confirm('Xóa sản phẩm này?')){fetch(`/api/products/${id}`,{method:'DELETE'}).then(()=>{loadProducts(); loadWarehouse();});}}
 
-// ====== Inbound ======
-function loadInbound() {
-  fetch('/api/inbound').then(r=>r.json()).then(data=>{
-    const tbody = document.getElementById('inboundTable');
-    tbody.innerHTML='';
-    data.forEach(i=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML=`<td>${i.productId.name}</td><td>${i.quantity}</td><td>${i.date}</td>
-        <td><button class="action-btn delete-btn" onclick="deleteInbound('${i._id}')">Xóa</button></td>`;
-      tbody.appendChild(tr);
-    });
-  });
+// ---------------- Add/remove rows ----------------
+async function addImportRow(){
+  const container=document.getElementById('importRows');
+  const row=document.createElement('div'); row.className='row-item';
+  row.innerHTML=`<select class="importProduct" required></select><input type="number" class="importQty" placeholder="Số lượng" required><button type="button" onclick="removeRow(this)">Xóa</button>`;
+  container.appendChild(row);
+  const sel=row.querySelector('select');
+  const products=await fetch('/api/products').then(r=>r.json());
+  products.forEach(p=>{const opt=document.createElement('option'); opt.value=p._id; opt.text=p.name; sel.add(opt);});
 }
-document.getElementById('addInboundForm').addEventListener('submit', e=>{
+
+async function addExportRow(){
+  const container=document.getElementById('exportRows');
+  const row=document.createElement('div'); row.className='row-item';
+  row.innerHTML=`<select class="exportProduct" required></select><input type="number" class="exportQty" placeholder="Số lượng" required><button type="button" onclick="removeRow(this)">Xóa</button>`;
+  container.appendChild(row);
+  const sel=row.querySelector('select');
+  const products=await fetch('/api/products').then(r=>r.json());
+  products.forEach(p=>{const opt=document.createElement('option'); opt.value=p._id; opt.text=p.name; sel.add(opt);});
+}
+
+function removeRow(btn){btn.parentElement.remove();}
+
+// ---------------- Init row on tab switch ----------------
+async function initImportRow(){const container=document.getElementById('importRows'); if(container.children.length===0) await addImportRow();}
+async function initExportRow(){const container=document.getElementById('exportRows'); if(container.children.length===0) await addExportRow();}
+
+// ---------------- Submit Inbound/Outbound ----------------
+document.getElementById('importForm').addEventListener('submit', async e=>{
   e.preventDefault();
-  const body={productId:document.getElementById('inboundProduct').value,
-              quantity:Number(document.getElementById('inboundQty').value),
-              date:document.getElementById('inboundDate').value};
-  fetch('/api/inbound',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-    .then(()=>{ loadInbound(); e.target.reset(); loadWarehouse(); });
+  const rows=document.querySelectorAll('#importRows .row-item');
+  const items=Array.from(rows).map(r=>({productId:r.querySelector('select').value,quantity:+r.querySelector('input').value}));
+  if(items.length===0) return;
+  await fetch('/api/inbound',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
+  document.getElementById('importRows').innerHTML='';
+  await loadInventory(); await loadInbound();
 });
-window.deleteInbound=id=>{if(confirm('Xóa phiếu nhập?')){fetch(`/api/inbound/${id}`,{method:'DELETE'}).then(()=>{loadInbound(); loadWarehouse();});}}
 
-// ====== Outbound ======
-function loadOutbound() {
-  fetch('/api/outbound').then(r=>r.json()).then(data=>{
-    const tbody = document.getElementById('outboundTable');
-    tbody.innerHTML='';
-    data.forEach(o=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML=`<td>${o.productId.name}</td><td>${o.quantity}</td><td>${o.date}</td>
-        <td><button class="action-btn delete-btn" onclick="deleteOutbound('${o._id}')">Xóa</button></td>`;
-      tbody.appendChild(tr);
-    });
-  });
-}
-document.getElementById('addOutboundForm').addEventListener('submit', e=>{
+document.getElementById('exportForm').addEventListener('submit', async e=>{
   e.preventDefault();
-  const body={productId:document.getElementById('outboundProduct').value,
-              quantity:Number(document.getElementById('outboundQty').value),
-              date:document.getElementById('outboundDate').value};
-  fetch('/api/outbound',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-    .then(()=>{ loadOutbound(); e.target.reset(); loadWarehouse(); });
+  const errDiv=document.getElementById('exportError'); errDiv.innerText='';
+  const rows=document.querySelectorAll('#exportRows .row-item');
+  const items=Array.from(rows).map(r=>({productId:r.querySelector('select').value,quantity:+r.querySelector('input').value}));
+  if(items.length===0) return;
+  const whData=await fetch('/api/warehouse').then(r=>r.json());
+  for(const it of items){
+    const stock=whData.find(w=>w.productId._id===it.productId)?.stock||0;
+    if(it.quantity>stock){errDiv.innerText=`Sản phẩm ${it.productId} vượt tồn kho (${stock})`; return;}
+  }
+  await fetch('/api/outbound',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
+  document.getElementById('exportRows').innerHTML='';
+  await loadInventory(); await loadOutbound();
 });
-window.deleteOutbound=id=>{if(confirm('Xóa phiếu xuất?')){fetch(`/api/outbound/${id}`,{method:'DELETE'}).then(()=>{loadOutbound(); loadWarehouse();});}}
 
-// ====== Warehouse ======
-function loadWarehouse() {
-  fetch('/api/warehouse').then(r=>r.json()).then(data=>{
-    const tbody = document.getElementById('warehouseTable');
-    tbody.innerHTML='';
-    data.forEach(w=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML=`<td>${w.productId.name}</td><td>${w.stock}</td>`;
-      tbody.appendChild(tr);
-    });
-  });
+// ---------------- Delete ----------------
+async function delInbound(id){await fetch('/api/inbound/'+id,{method:'DELETE'});await loadInventory();await loadInbound();}
+async function delOutbound(id){await fetch('/api/outbound/'+id,{method:'DELETE'});await loadInventory();await loadOutbound();}
+
+// ---------------- Print ----------------
+async function printInbound(id){
+  const data=await fetch('/api/inbound').then(r=>r.json());
+  const receipt=data.find(r=>r._id===id);
+  if(!receipt) return alert('Không tìm thấy phiếu');
+  const rows=receipt.items.map((i,idx)=>`<tr><td>${idx+1}</td><td>${i.productId.name}</td><td>${i.quantity}</td></tr>`).join('');
+  const html=`<html><head><title>Phiếu nhập</title><style>body{font-family:sans-serif;padding:20px;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #000;padding:8px;text-align:left;}</style></head><body><h2>Phiếu nhập</h2><p>Mã phiếu: ${receipt._id}</p><p>Ngày: ${new Date(receipt.createdAt).toLocaleString()}</p><table><thead><tr><th>STT</th><th>Sản phẩm</th><th>Số lượng</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  const w=window.open('','_blank'); w.document.write(html); w.document.close(); w.print();
 }
 
-// Init
+async function printOutbound(id){
+  const data=await fetch('/api/outbound').then(r=>r.json());
+  const receipt=data.find(r=>r._id===id);
+  if(!receipt) return alert('Không tìm thấy phiếu');
+  const rows=receipt.items.map((i,idx)=>`<tr><td>${idx+1}</td><td>${i.productId.name}</td><td>${i.quantity}</td></tr>`).join('');
+  const html=`<html><head><title>Phiếu xuất</title><style>body{font-family:sans-serif;padding:20px;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #000;padding:8px;text-align:left;}</style></head><body><h2>Phiếu xuất</h2><p>Mã phiếu: ${receipt._id}</p><p>Ngày: ${new Date(receipt.createdAt).toLocaleString()}</p><table><thead><tr><th>STT</th><th>Sản phẩm</th><th>Số lượng</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  const w=window.open('','_blank'); w.document.write(html); w.document.close(); w.print();
+}
+
+// ---------------- Init ----------------
 loadProducts();
-loadInbound();
-loadOutbound();
-loadWarehouse();
 </script>
-
 </body>
 </html>
