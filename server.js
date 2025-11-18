@@ -1,14 +1,16 @@
+// server.js
 import express from 'express';
 import mongoose from 'mongoose';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-
-dotenv.config();
+import receiptTemplate from './templates/receipt_template.js';
 
 import Product from './models/Product.js';
 import InboundReceipt from './models/InboundReceipt.js';
 import OutboundReceipt from './models/OutboundReceipt.js';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -145,6 +147,50 @@ app.get('/api/warehouse', async(req,res)=>{
 
     res.json(warehouse);
   } catch(err) { res.status(500).json({error: err.message}); }
+});
+
+// ------------------- PHIẾU IN (template) -------------------
+app.get('/receipt/:code', async (req,res)=>{
+  const { code } = req.params;
+  let receipt = await OutboundReceipt.findOne({ code }).populate('items.productId');
+  let type = 'PX';
+  if(!receipt){
+    receipt = await InboundReceipt.findOne({ code }).populate('items.productId');
+    type = 'PN';
+  }
+  if(!receipt) return res.status(404).send('Không tìm thấy phiếu');
+
+  const html = receiptTemplate(receipt, type);
+  res.send(html);
+});
+// ------------------- PRODUCTS -------------------
+app.get('/api/products', async (req, res) => {
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/products', async (req, res) => {
+  try {
+    const p = new Product(req.body);
+    await p.save();
+    res.status(201).json(p);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// MỚI: xóa sản phẩm
+app.delete('/api/products/:id', async (req, res) => {
+  try {
+    await Product.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Đã xóa sản phẩm' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ------------------- SPA fallback -------------------
