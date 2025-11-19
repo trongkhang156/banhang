@@ -59,7 +59,7 @@ button:hover{background:#1e8449;}
 
 <body>
 
-<button id="installBtn">📥 Thêm vào màn hình chính</button>
+<button id="installBtn" aria-hidden="true">📥 Thêm vào màn hình chính</button>
 
 <div class="header">Quản lý kho</div>
 <div class="wrapper">
@@ -158,20 +158,33 @@ button:hover{background:#1e8449;}
 </div>
 
 <script>
-
-// ==========================================================
-// SERVICE WORKER ĐĂNG KÝ
-// ==========================================================
+// ========== REGISTER SERVICE WORKER ==========
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js")
     .then(reg => console.log("SW registered:", reg))
     .catch(err => console.log("SW error:", err));
 }
 
-// ==========================================================
-// TAB FUNCTION
-// ==========================================================
-const tabs=document.querySelectorAll('.tab'); 
+// ========== INSTALL BUTTON (Android) ==========
+let deferredPrompt;
+const installBtn = document.getElementById("installBtn");
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = "block";
+});
+
+installBtn.addEventListener("click", async () => {
+  installBtn.style.display = "none";
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+});
+
+// ========== TABS ==========
+const tabs=document.querySelectorAll('.tab');
 const contents=document.querySelectorAll('.tab-content');
 tabs.forEach(tab=>tab.addEventListener('click',()=>{
   tabs.forEach(t=>t.classList.remove('active'));
@@ -179,53 +192,53 @@ tabs.forEach(tab=>tab.addEventListener('click',()=>{
   contents.forEach(c=>c.style.display=c.id===tab.dataset.tab?'block':'none');
 }));
 
-let importItems=[], exportItems=[];
+// ========== STATE ==========
+let importItems = [], exportItems = [];
 
-// ==========================================================
-// LOAD DATA FUNCTIONS
-// ==========================================================
+// ========== LOAD FUNCTIONS (always use no-store) ==========
 async function loadProducts(){
   console.log("LOAD PRODUCTS");
   const res = await fetch('/api/products', { cache: "no-store" });
   const data = await res.json();
 
-  const tbody = document.getElementById('productTable'); 
-  tbody.innerHTML='';
-  const importSel = document.getElementById('importProduct'); 
-  importSel.innerHTML='<option value="">Chọn sản phẩm</option>';
-  const exportSel = document.getElementById('exportProduct'); 
-  exportSel.innerHTML='<option value="">Chọn sản phẩm</option>';
+  const tbody = document.getElementById('productTable');
+  tbody.innerHTML = '';
+
+  const importSel = document.getElementById('importProduct');
+  importSel.innerHTML = '<option value="">Chọn sản phẩm</option>';
+  const exportSel = document.getElementById('exportProduct');
+  exportSel.innerHTML = '<option value="">Chọn sản phẩm</option>';
 
   data.forEach(p=>{
-    const tr=document.createElement('tr'); 
-    tr.innerHTML=`
-      <td>${p.name}</td>
-      <td>${p.price}</td>
-      <td>${p.description||''}</td>
-      <td><button onclick="deleteProduct('${p._id}')">Xóa</button></td>`;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHtml(p.name)}</td>
+      <td>${escapeHtml(String(p.price))}</td>
+      <td>${escapeHtml(p.description||'')}</td>
+      <td><button class="btn-delete-product delete-btn" data-id="${p._id}">Xóa</button></td>
+    `;
     tbody.appendChild(tr);
 
     importSel.add(new Option(p.name, p._id));
     exportSel.add(new Option(p.name, p._id));
   });
 
-  loadInventory(); 
-  loadInboundReceipts(); 
-  loadOutboundReceipts();
+  // load dependent lists
+  await loadInventory();
+  await loadInboundReceipts();
+  await loadOutboundReceipts();
 }
 
 async function loadInventory(){
   console.log("LOAD INVENTORY");
+  const res = await fetch('/api/warehouse', { cache: "no-store" });
+  const data = await res.json();
 
-  const res=await fetch('/api/warehouse', { cache: "no-store" });
-  const data=await res.json();
-
-  const tbody=document.getElementById('inventoryTable'); 
-  tbody.innerHTML='';
-
+  const tbody = document.getElementById('inventoryTable');
+  tbody.innerHTML = '';
   data.forEach(w=>{
-    const tr=document.createElement('tr'); 
-    tr.innerHTML=`<td>${w.productId.name}</td><td>${w.stock}</td>`;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(w.productId.name)}</td><td>${escapeHtml(String(w.stock))}</td>`;
     tbody.appendChild(tr);
   });
 }
@@ -235,19 +248,19 @@ async function loadInboundReceipts(){
   const res = await fetch('/api/inbound', { cache: "no-store" });
   const data = await res.json();
 
-  const tbody=document.getElementById('importReceiptsTable'); 
-  tbody.innerHTML='';
-
+  const tbody = document.getElementById('importReceiptsTable');
+  tbody.innerHTML = '';
   data.forEach(r=>{
     const items = r.items.map(i=>`${i.productId.name} (${i.quantity})`).join(', ');
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td>${r.code}</td>
-      <td>${items}</td>
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHtml(r.code)}</td>
+      <td>${escapeHtml(items)}</td>
       <td>
-        <button onclick="printReceipt('${r.code}')">In</button>
-        <button onclick="deleteInbound('${r._id}')" style="background:#e74c3c;margin-left:5px;">Xóa</button>
-      </td>`;
+        <button class="btn-print" data-code="${escapeHtml(r.code)}">In</button>
+        <button class="btn-delete-inbound delete-btn" data-id="${r._id}">Xóa</button>
+      </td>
+    `;
     tbody.appendChild(tr);
   });
 }
@@ -257,121 +270,221 @@ async function loadOutboundReceipts(){
   const res = await fetch('/api/outbound', { cache: "no-store" });
   const data = await res.json();
 
-  const tbody=document.getElementById('exportReceiptsTable'); 
-  tbody.innerHTML='';
-
+  const tbody = document.getElementById('exportReceiptsTable');
+  tbody.innerHTML = '';
   data.forEach(r=>{
     const items = r.items.map(i=>`${i.productId.name} (${i.quantity})`).join(', ');
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td>${r.code}</td>
-      <td>${items}</td>
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHtml(r.code)}</td>
+      <td>${escapeHtml(items)}</td>
       <td>
-        <button onclick="printReceipt('${r.code}')">In</button>
-        <button onclick="deleteOutbound('${r._id}')" style="background:#e74c3c;margin-left:5px;">Xóa</button>
-      </td>`;
+        <button class="btn-print" data-code="${escapeHtml(r.code)}">In</button>
+        <button class="btn-delete-outbound delete-btn" data-id="${r._id}">Xóa</button>
+      </td>
+    `;
     tbody.appendChild(tr);
   });
 }
 
-// ==========================================================
-// AUTO REFRESH KHI QUAY LẠI APP (FIX PWA KHÔNG LOAD DỮ LIỆU MỚI)
-// ==========================================================
+// ========== VISIBILITY (auto-refresh when app resumed) ==========
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
-    console.log("APP RESUMED — RELOADING ALL DATA...");
+    console.log("APP RESUMED — reloading");
     loadProducts();
   }
 });
 
-// ==========================================================
-// DELETE PRODUCT
-// ==========================================================
-async function deleteProduct(id){
+// ========== DELETE PRODUCT via delegation ==========
+async function deleteProductById(id){
   if(!confirm('Xóa sản phẩm?')) return;
-  await fetch(`/api/products/${id}`, { method:'DELETE' });
-  loadProducts();
+  await fetch(`/api/products/${id}`, { method: 'DELETE' });
+  await loadProducts();
 }
 
-// ==========================================================
-// IMPORT / EXPORT LOGIC
-// ==========================================================
+// ========== IMPORT (multi) ==========
 document.getElementById('addImportItem').addEventListener('click', ()=>{
-  const pid=document.getElementById('importProduct').value;
-  const qty=+document.getElementById('importQty').value;
-  if(!pid||qty<=0) return alert('Chọn sản phẩm và số lượng >0');
-  importItems.push({productId:pid, quantity:qty});
+  const pid = document.getElementById('importProduct').value;
+  const qty = +document.getElementById('importQty').value;
+  if(!pid || qty <= 0) return alert('Chọn sản phẩm và số lượng >0');
+  importItems.push({ productId: pid, quantity: qty });
   renderImportItems();
 });
 
 function renderImportItems(){
-  const tbody=document.getElementById('importItemsTable'); 
-  tbody.innerHTML='';
-  importItems.forEach((it,idx)=>{
-    const name=document.getElementById('importProduct').selectedOptions[0].text;
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td>${name}</td>
-      <td>${it.quantity}</td>
-      <td><button onclick="importItems.splice(${idx},1);renderImportItems();" class="delete-btn">Xóa</button></td>`;
+  const tbody = document.getElementById('importItemsTable');
+  tbody.innerHTML = '';
+  importItems.forEach((it, idx) => {
+    const name = document.getElementById('importProduct').querySelector(`option[value="${it.productId}"]`).text;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHtml(name)}</td>
+      <td>${escapeHtml(String(it.quantity))}</td>
+      <td><button class="btn-remove-import delete-btn" data-idx="${idx}">Xóa</button></td>
+    `;
     tbody.appendChild(tr);
   });
 }
 
 document.getElementById('submitImport').addEventListener('click', async ()=>{
-  if(importItems.length===0) return alert('Chưa có sản phẩm nào');
-  await fetch('/api/inbound',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:importItems})});
-  importItems=[]; renderImportItems();
-  loadProducts();
+  if(importItems.length === 0) return alert('Chưa có sản phẩm nào');
+  const res = await fetch('/api/inbound', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ items: importItems })
+  });
+  if (res.ok) {
+    alert('Nhập kho thành công');
+    importItems = [];
+    renderImportItems();
+    await loadProducts(); // reload everything
+  } else {
+    const err = await res.json().catch(()=>({ error: 'Lỗi server' }));
+    alert(err.error || 'Lỗi khi nhập kho');
+  }
 });
 
-// EXPORT
+// ========== EXPORT (multi) ==========
 document.getElementById('addExportItem').addEventListener('click', ()=>{
-  const pid=document.getElementById('exportProduct').value;
-  const qty=+document.getElementById('exportQty').value;
-  if(!pid||qty<=0) return alert('Chọn sản phẩm và số lượng >0');
-  exportItems.push({productId:pid, quantity:qty});
+  const pid = document.getElementById('exportProduct').value;
+  const qty = +document.getElementById('exportQty').value;
+  if(!pid || qty <= 0) return alert('Chọn sản phẩm và số lượng >0');
+  exportItems.push({ productId: pid, quantity: qty });
   renderExportItems();
 });
 
 function renderExportItems(){
-  const tbody=document.getElementById('exportItemsTable'); 
-  tbody.innerHTML='';
-  exportItems.forEach((it,idx)=>{
-    const name=document.getElementById('exportProduct').selectedOptions[0].text;
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td>${name}</td>
-      <td>${it.quantity}</td>
-      <td><button onclick="exportItems.splice(${idx},1);renderExportItems();" class="delete-btn">Xóa</button></td>`;
+  const tbody = document.getElementById('exportItemsTable');
+  tbody.innerHTML = '';
+  exportItems.forEach((it, idx) => {
+    const name = document.getElementById('exportProduct').querySelector(`option[value="${it.productId}"]`).text;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHtml(name)}</td>
+      <td>${escapeHtml(String(it.quantity))}</td>
+      <td><button class="btn-remove-export delete-btn" data-idx="${idx}">Xóa</button></td>
+    `;
     tbody.appendChild(tr);
   });
 }
 
 document.getElementById('submitExport').addEventListener('click', async ()=>{
-  if(exportItems.length===0) return alert('Chưa có sản phẩm nào');
+  if(exportItems.length === 0) return alert('Chưa có sản phẩm nào');
 
   const whRes = await fetch('/api/warehouse', { cache: "no-store" });
   const whData = await whRes.json();
 
   for(const it of exportItems){
-    const stock = whData.find(w=>w.productId._id===it.productId)?.stock||0;
+    const stock = whData.find(w => w.productId._id === it.productId)?.stock || 0;
     if(it.quantity > stock) return alert(`Không đủ tồn (còn ${stock})`);
   }
 
-  await fetch('/api/outbound',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:exportItems})});
-  exportItems=[]; renderExportItems();
-  loadProducts();
+  const res = await fetch('/api/outbound', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ items: exportItems })
+  });
+
+  if (res.ok) {
+    alert('Xuất kho thành công');
+    exportItems = [];
+    renderExportItems();
+    await loadProducts();
+  } else {
+    const err = await res.json().catch(()=>({ error: 'Lỗi server' }));
+    alert(err.error || 'Lỗi khi xuất kho');
+  }
 });
 
+// ========== PRINT ==========
 function printReceipt(code){
   window.open(`/receipt/${code}`, '_blank');
 }
 
+// ========== DELEGATED CLICK HANDLER ==========
+document.body.addEventListener('click', async (e) => {
+  const t = e.target;
+
+  // delete product
+  if (t.classList.contains('btn-delete-product')) {
+    const id = t.dataset.id;
+    await deleteProductById(id);
+    return;
+  }
+
+  // remove import item (by index)
+  if (t.classList.contains('btn-remove-import')) {
+    const idx = Number(t.dataset.idx);
+    importItems.splice(idx, 1);
+    renderImportItems();
+    return;
+  }
+
+  // remove export item
+  if (t.classList.contains('btn-remove-export')) {
+    const idx = Number(t.dataset.idx);
+    exportItems.splice(idx, 1);
+    renderExportItems();
+    return;
+  }
+
+  // delete inbound receipt
+  if (t.classList.contains('btn-delete-inbound')) {
+    const id = t.dataset.id;
+    if (!confirm('Bạn có chắc muốn xóa phiếu nhập?')) return;
+    await fetch(`/api/inbound/${id}`, { method: 'DELETE' });
+    await loadInboundReceipts();
+    await loadProducts();
+    return;
+  }
+
+  // delete outbound receipt
+  if (t.classList.contains('btn-delete-outbound')) {
+    const id = t.dataset.id;
+    if (!confirm('Bạn có chắc muốn xóa phiếu xuất?')) return;
+    await fetch(`/api/outbound/${id}`, { method: 'DELETE' });
+    await loadOutboundReceipts();
+    await loadProducts();
+    return;
+  }
+
+  // print button
+  if (t.classList.contains('btn-print')) {
+    const code = t.dataset.code;
+    printReceipt(code);
+    return;
+  }
+});
+
+// ========== ADD PRODUCT ==========
+document.getElementById('addForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('addName').value.trim();
+  const price = +document.getElementById('addPrice').value;
+  const desc = document.getElementById('addDesc').value.trim();
+
+  if (!name) return alert('Tên sản phẩm không được để trống');
+
+  await fetch('/api/products', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name, price, description: desc })
+  });
+
+  e.target.reset();
+  await loadProducts();
+});
+
+// ========== UTIL ==========
+function escapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; });
+}
+
+// ========== INITIAL LOAD ==========
 loadProducts();
 
 </script>
-
 
 </body>
 </html>
