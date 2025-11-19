@@ -4,12 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quản lý kho - PWA</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#27ae60">
+
+<!-- iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Quản lý kho">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Roboto',sans-serif;}
 body{background:#f4f6f8;color:#2d3e50;}
 .wrapper{display:flex;flex-direction:column;min-height:100vh;}
-.header{background:#27ae60;color:white;text-align:center;font-size:22px;font-weight:700;padding:15px;position:relative;}
+.header{background:#27ae60;color:white;text-align:center;font-size:22px;font-weight:700;padding:15px;}
 .tabs{display:flex;overflow-x:auto;background:#2c3e50;}
 .tab{flex:1;padding:12px;color:white;text-align:center;cursor:pointer;transition:0.2s;font-weight:500;}
 .tab.active{background:#1e8449;font-weight:700;}
@@ -28,68 +40,28 @@ button{cursor:pointer; border:none; border-radius:6px; padding:6px 12px; backgro
 button:hover{background:#1e8449;}
 .delete-btn{background:#e74c3c;color:white;} .delete-btn:hover{background:#c0392b;}
 .error-msg{color:red;font-size:13px;margin-top:5px;}
-@media (min-width:768px){
-  .wrapper{flex-direction:row;}
-  .tabs{flex-direction:column;width:180px;height:100vh;}
-  .tab{text-align:left;padding-left:20px;}
-  .content{flex:1;padding:20px;}
-}
 
-/* A2HS button */
-#btnAddToHome {
-  position:absolute;
-  right:15px;
-  top:15px;
-  background:#f39c12;
-  color:white;
-  padding:8px 12px;
-  border-radius:6px;
-  display:none;
-  cursor:pointer;
-}
-
-/* iOS banner */
-#iosBanner {
-  display:none;
-  background:#f39c12;
-  color:white;
-  padding:10px;
-  text-align:center;
-  font-size:14px;
+#installBtn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #ff9800;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: bold;
+  display: none;
+  z-index: 9999;
 }
 </style>
-
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#27ae60">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Quản lý kho">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
-
 </head>
-
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("/sw.js")
-      .then((reg) => console.log("Service Worker registered", reg))
-      .catch((err) => console.log("SW registration failed", err));
-  });
-}
-</script>
 
 <body>
 
-<div id="iosBanner">
-  Để cài app: Chạm <strong>Chia sẻ → Thêm vào màn hình chính</strong>
-</div>
+<button id="installBtn">📥 Thêm vào màn hình chính</button>
 
-<div class="header">
-  Quản lý kho
-  <button id="btnAddToHome">Thêm vào màn hình chính</button>
-</div>
-
+<div class="header">Quản lý kho</div>
 <div class="wrapper">
   <div class="tabs">
     <div class="tab active" data-tab="products">Sản phẩm</div>
@@ -148,11 +120,10 @@ if ("serviceWorker" in navigator) {
         </table>
         <button id="submitImport" style="margin-top:10px;">Lưu phiếu nhập</button>
       </div>
-
       <div class="card">
         <h2>Danh sách phiếu nhập</h2>
         <table>
-          <thead><tr><th>Mã phiếu</th><th>Chi tiết sản phẩm</th><th>Thao tác</th></tr></thead>
+          <thead><tr><th>Mã phiếu</th><th>Chi tiết</th><th>Thao tác</th></tr></thead>
           <tbody id="importReceiptsTable"></tbody>
         </table>
       </div>
@@ -174,11 +145,10 @@ if ("serviceWorker" in navigator) {
         </table>
         <button id="submitExport" style="margin-top:10px;">Lưu phiếu xuất</button>
       </div>
-
       <div class="card">
         <h2>Danh sách phiếu xuất</h2>
         <table>
-          <thead><tr><th>Mã phiếu</th><th>Chi tiết sản phẩm</th><th>Thao tác</th></tr></thead>
+          <thead><tr><th>Mã phiếu</th><th>Chi tiết</th><th>Thao tác</th></tr></thead>
           <tbody id="exportReceiptsTable"></tbody>
         </table>
       </div>
@@ -188,7 +158,55 @@ if ("serviceWorker" in navigator) {
 </div>
 
 <script>
-/* ========== Tabs ========== */
+// ======================
+// SERVICE WORKER
+// ======================
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js");
+}
+
+// ======================
+// INSTALL BUTTON
+// ======================
+let deferredPrompt;
+const installBtn = document.getElementById("installBtn");
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = "block";
+});
+
+installBtn.addEventListener("click", async () => {
+  installBtn.style.display = "none";
+  deferredPrompt.prompt();
+  deferredPrompt = null;
+});
+
+// iOS WARNING
+function checkIOS() {
+  const ua = navigator.userAgent.toLowerCase();
+  if (/iphone|ipad|ipod/.test(ua)) {
+    console.log("iOS: Chỉ Safari hỗ trợ Add to Home Screen");
+  }
+}
+checkIOS();
+
+// ======================
+// AUTO REFRESH KHI MỞ LẠI APP
+// ======================
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    loadProducts();
+    loadInventory();
+    loadInboundReceipts();
+    loadOutboundReceipts();
+  }
+});
+
+// ======================
+// TABS CODE
+// ======================
 const tabs=document.querySelectorAll('.tab'); 
 const contents=document.querySelectorAll('.tab-content');
 tabs.forEach(tab=>tab.addEventListener('click',()=>{
@@ -197,62 +215,52 @@ tabs.forEach(tab=>tab.addEventListener('click',()=>{
   contents.forEach(c=>c.style.display=c.id===tab.dataset.tab?'block':'none');
 }));
 
-/* ======= A2HS BUTTON (ANDROID) ======= */
-let deferredPrompt;
-const btnAdd = document.getElementById("btnAddToHome");
-
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  btnAdd.style.display = "block";
-});
-
-btnAdd.addEventListener("click", async () => {
-  btnAdd.style.display = "none";
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-  deferredPrompt = null;
-});
-
-/* ======= iOS BANNER ======= */
-const isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
-const isStandalone = window.navigator.standalone;
-
-if (isIOS && !isStandalone) {
-  document.getElementById("iosBanner").style.display = "block";
-}
-
-/* ======= REST OF YOUR ORIGINAL JS ======= */
-
 let importItems=[], exportItems=[];
 
+// ======================
+// LOAD PRODUCTS
+// ======================
 async function loadProducts(){
   const res=await fetch('/api/products'); 
   const data=await res.json();
-  const tbody=document.getElementById('productTable'); tbody.innerHTML='';
-  const importSel=document.getElementById('importProduct'); importSel.innerHTML='<option value="">Chọn sản phẩm</option>';
-  const exportSel=document.getElementById('exportProduct'); exportSel.innerHTML='<option value="">Chọn sản phẩm</option>';
+  const tbody=document.getElementById('productTable'); 
+  tbody.innerHTML='';
+  const importSel=document.getElementById('importProduct'); 
+  importSel.innerHTML='<option value="">Chọn sản phẩm</option>';
+  const exportSel=document.getElementById('exportProduct'); 
+  exportSel.innerHTML='<option value="">Chọn sản phẩm</option>';
   data.forEach(p=>{
     const tr=document.createElement('tr'); 
     tr.innerHTML=`<td>${p.name}</td><td>${p.price}</td><td>${p.description||''}</td>
-                    <td><button onclick="deleteProduct('${p._id}')">Xóa</button></td>`;
+                  <td><button onclick="deleteProduct('${p._id}')">Xóa</button></td>`;
     tbody.appendChild(tr);
-    const opt1=document.createElement('option'); opt1.value=p._id; opt1.text=p.name; importSel.add(opt1);
-    const opt2=document.createElement('option'); opt2.value=p._id; opt2.text=p.name; exportSel.add(opt2);
+
+    importSel.add(new Option(p.name, p._id));
+    exportSel.add(new Option(p.name, p._id));
   });
-  loadInventory(); loadInboundReceipts(); loadOutboundReceipts();
+
+  loadInventory();
+  loadInboundReceipts();
+  loadOutboundReceipts();
 }
 
+// ======================
+// DELETE PRODUCT
+// ======================
 async function deleteProduct(id){
   if(!confirm('Bạn có chắc muốn xóa sản phẩm này?')) return;
-  const res = await fetch(`/api/products/${id}`, { method:'DELETE' });
-  if(res.ok) loadProducts();
+  await fetch(`/api/products/${id}`, { method:'DELETE' });
+  loadProducts();
 }
 
+// ======================
+// INVENTORY
+// ======================
 async function loadInventory(){
-  const res=await fetch('/api/warehouse'); const data=await res.json();
-  const tbody=document.getElementById('inventoryTable'); tbody.innerHTML='';
+  const res=await fetch('/api/warehouse'); 
+  const data=await res.json();
+  const tbody=document.getElementById('inventoryTable'); 
+  tbody.innerHTML='';
   data.forEach(w=>{
     const tr=document.createElement('tr'); 
     tr.innerHTML=`<td>${w.productId.name}</td><td>${w.stock}</td>`; 
@@ -260,7 +268,9 @@ async function loadInventory(){
   });
 }
 
-/* ========== IMPORT ========== */
+// ======================
+// IMPORT ITEMS
+// ======================
 document.getElementById('addImportItem').addEventListener('click', ()=>{
   const pid=document.getElementById('importProduct').value;
   const qty=+document.getElementById('importQty').value;
@@ -268,14 +278,15 @@ document.getElementById('addImportItem').addEventListener('click', ()=>{
   importItems.push({productId:pid, quantity:qty});
   renderImportItems();
 });
-
 function renderImportItems(){
-  const tbody=document.getElementById('importItemsTable'); tbody.innerHTML='';
+  const tbody=document.getElementById('importItemsTable'); 
+  tbody.innerHTML='';
   importItems.forEach((it,idx)=>{
-    const name=document.getElementById('importProduct').selectedOptions[0].text;
+    const name=document.getElementById('importProduct').options.namedItem
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${name}</td><td>${it.quantity}</td>
-                  <td><button onclick="importItems.splice(${idx},1);renderImportItems();" class="delete-btn">Xóa</button></td>`;
+    tr.innerHTML=`<td>${document.getElementById('importProduct').querySelector(`option[value="${it.productId}"]`).text}</td>
+                  <td>${it.quantity}</td>
+                  <td><button class="delete-btn" onclick="importItems.splice(${idx},1);renderImportItems()">Xóa</button></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -283,10 +294,17 @@ function renderImportItems(){
 document.getElementById('submitImport').addEventListener('click', async ()=>{
   if(importItems.length===0) return alert('Chưa có sản phẩm nào');
   const res=await fetch('/api/inbound',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:importItems})});
-  if(res.ok){ importItems=[]; renderImportItems(); loadInventory(); loadInboundReceipts(); }
+  if(res.ok){ 
+    alert('Nhập kho thành công'); 
+    importItems=[];
+    renderImportItems();
+    loadProducts();     // FIX LOAD LẠI
+  }
 });
 
-/* ========== EXPORT ========== */
+// ======================
+// EXPORT ITEMS
+// ======================
 document.getElementById('addExportItem').addEventListener('click', ()=>{
   const pid=document.getElementById('exportProduct').value;
   const qty=+document.getElementById('exportQty').value;
@@ -296,12 +314,13 @@ document.getElementById('addExportItem').addEventListener('click', ()=>{
 });
 
 function renderExportItems(){
-  const tbody=document.getElementById('exportItemsTable'); tbody.innerHTML='';
+  const tbody=document.getElementById('exportItemsTable'); 
+  tbody.innerHTML='';
   exportItems.forEach((it,idx)=>{
-    const name=document.getElementById('exportProduct').selectedOptions[0].text;
+    const name=document.getElementById('exportProduct').querySelector(`option[value="${it.productId}"]`).text;
     const tr=document.createElement('tr');
     tr.innerHTML=`<td>${name}</td><td>${it.quantity}</td>
-                  <td><button onclick="exportItems.splice(${idx},1);renderExportItems();" class="delete-btn">Xóa</button></td>`;
+                  <td><button class="delete-btn" onclick="exportItems.splice(${idx},1);renderExportItems()">Xóa</button></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -313,67 +332,87 @@ document.getElementById('submitExport').addEventListener('click', async ()=>{
   const whData=await whRes.json();
 
   for(const it of exportItems){
-    const stock = whData.find(w=>w.productId._id===it.productId)?.stock||0;
+    const stock=whData.find(w=>w.productId._id===it.productId)?.stock||0;
     if(it.quantity>stock) return alert(`Sản phẩm ${it.productId} vượt tồn kho (còn ${stock})`);
   }
 
   const res=await fetch('/api/outbound',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:exportItems})});
-  if(res.ok){ exportItems=[]; renderExportItems(); loadInventory(); loadOutboundReceipts(); }
+  if(res.ok){
+    alert('Xuất kho thành công'); 
+    exportItems=[];
+    renderExportItems();
+    loadProducts();     // FIX LOAD LẠI
+  }
 });
 
-/* LOAD RECEIPTS */
+// ======================
+// LOAD RECEIPTS
+// ======================
 async function loadInboundReceipts(){
-  const res=await fetch('/api/inbound'); const data=await res.json();
-  const tbody=document.getElementById('importReceiptsTable'); tbody.innerHTML='';
+  const res=await fetch('/api/inbound'); 
+  const data=await res.json();
+  const tbody=document.getElementById('importReceiptsTable'); 
+  tbody.innerHTML='';
   data.forEach(r=>{
     const items = r.items.map(i=>`${i.productId.name} (${i.quantity})`).join(', ');
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${r.code}</td><td>${items}</td>
-                  <td><button onclick="printReceipt('${r.code}')">In</button>
-                      <button onclick="deleteInbound('${r._id}')" class="delete-btn">Xóa</button></td>`;
+    tr.innerHTML=`<td>${r.code}</td>
+                  <td>${items}</td>
+                  <td>
+                    <button onclick="printReceipt('${r.code}')">In</button>
+                    <button onclick="deleteInbound('${r._id}')" class="delete-btn" style="margin-left:5px;">Xóa</button>
+                  </td>`;
     tbody.appendChild(tr);
   });
 }
 
 async function loadOutboundReceipts(){
-  const res=await fetch('/api/outbound'); const data=await res.json();
-  const tbody=document.getElementById('exportReceiptsTable'); tbody.innerHTML='';
+  const res=await fetch('/api/outbound'); 
+  const data=await res.json();
+  const tbody=document.getElementById('exportReceiptsTable'); 
+  tbody.innerHTML='';
   data.forEach(r=>{
     const items = r.items.map(i=>`${i.productId.name} (${i.quantity})`).join(', ');
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${r.code}</td><td>${items}</td>
-                  <td><button onclick="printReceipt('${r.code}')">In</button>
-                      <button onclick="deleteOutbound('${r._id}')" class="delete-btn">Xóa</button></td>`;
+    tr.innerHTML=`<td>${r.code}</td>
+                  <td>${items}</td>
+                  <td>
+                    <button onclick="printReceipt('${r.code}')">In</button>
+                    <button onclick="deleteOutbound('${r._id}')" class="delete-btn" style="margin-left:5px;">Xóa</button>
+                  </td>`;
     tbody.appendChild(tr);
   });
 }
 
-/* DELETE RECEIPTS */
+// DELETE RECEIPTS
 async function deleteInbound(id){
-  if(!confirm('Bạn có chắc muốn xóa phiếu nhập này?')) return;
-  const res = await fetch(`/api/inbound/${id}`, { method:'DELETE' });
-  if(res.ok) loadInboundReceipts();
+  if(!confirm('Bạn có chắc muốn xóa phiếu nhập?')) return;
+  await fetch(`/api/inbound/${id}`, { method:'DELETE' });
+  loadInboundReceipts();
+  loadProducts();
 }
 
 async function deleteOutbound(id){
-  if(!confirm('Bạn có chắc muốn xóa phiếu xuất này?')) return;
-  const res = await fetch(`/api/outbound/${id}`, { method:'DELETE' });
-  if(res.ok) loadOutboundReceipts();
+  if(!confirm('Bạn có chắc muốn xóa phiếu xuất?')) return;
+  await fetch(`/api/outbound/${id}`, { method:'DELETE' });
+  loadOutboundReceipts();
+  loadProducts();
 }
 
-/* PRINT */
+// PRINT RECEIPT
 function printReceipt(code){
   window.open(`/receipt/${code}`, '_blank');
 }
 
-/* ADD PRODUCT */
+// ADD PRODUCT
 document.getElementById('addForm').addEventListener('submit', async e=>{
   e.preventDefault();
   const name=document.getElementById('addName').value;
   const price=+document.getElementById('addPrice').value;
   const desc=document.getElementById('addDesc').value;
   await fetch('/api/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,price,description:desc})});
-  e.target.reset(); loadProducts();
+  e.target.reset();
+  loadProducts();
 });
 
 loadProducts();
